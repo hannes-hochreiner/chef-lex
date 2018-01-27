@@ -1,5 +1,6 @@
 # chef-lex
 A trainings chat bot build on the Amazon Lex platform
+The running example can be found on the [github pages](https://hannes-hochreiner.github.io/chef-lex/)
 
 # prerequisites
   * AWS account
