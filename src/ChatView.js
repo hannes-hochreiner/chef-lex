@@ -31,27 +31,56 @@ export default class ChatView extends Component {
         text: ''
       };
     }, () => {
-      pps('system.getLexTextResponse', {
+      pps('system.getLexAudioResponse', {
         request: this.state.history[0],
         user: this.state.user,
         sessionAttributes: this.state.sessionAttributes
       }).then(res => {
-        console.log(res.textResponse);
-        this.setState((prevState) => {
-          let history = prevState.history;
+        return Promise.all([
+          this._playAudio(res.audioResponse.audioStream),
+          this._setState((prevState) => {
+            let history = prevState.history;
 
-          history.unshift(res.textResponse.message);
+            history.unshift(res.audioResponse.message);
 
-          return {
-            history: history,
-            sessionAttributes: res.textResponse.sessionAttributes
-          };
-        });
+            return {
+              history: history,
+              sessionAttributes: res.audioResponse.sessionAttributes
+            };
+          })
+        ]);
       }).catch(err => {
         console.log(err);
       });
     });
     event.preventDefault();
+  }
+
+  _setState(state) {
+    return new Promise((resolve, reject) => {
+      this.setState((prevState) => {
+        if (typeof state === 'function') {
+          return state(prevState);
+        }
+
+        return state;
+      }, () => {
+        resolve();
+      });
+    });
+  }
+
+  _playAudio(stream) {
+    return new Promise((resolve, reject) => {
+      let audio = new Audio();
+      audio.src = URL.createObjectURL(new Blob([stream], { type: 'audio/mpeg' }));
+      audio.addEventListener('ended', function() {
+        audio.currentTime = 0;
+        audio.src = null;
+        resolve();
+      });
+      audio.play();
+    });
   }
 
   handleChange(event) {
