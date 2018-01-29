@@ -96,22 +96,38 @@ export default class ChatView extends Component {
         user: this.state.user,
         sessionAttributes: this.state.sessionAttributes
       }).then(res => {
-        return Promise.all([
-          this._playAudio(res.textResponse.audioStream),
-          this._setState((prevState) => {
-            let history = prevState.history;
+        console.log(res);
+        if (res.textResponse.dialogState === 'ReadyForFulfillment') {
+          if (res.textResponse.intentName === 'SelectRecipe') {
+            return this._setState((prevState) => {
+              let history = prevState.history;
 
-            history.unshift({
-              text: res.textResponse.message,
-              source: 'lex'
+              history.unshift({
+                text: `Great! Let's cook ${res.textResponse.slots['Recipe']} for ${res.textResponse.slots['NumberOfPortions']} people.`,
+                source: 'lex'
+              });
+
+              return history;
             });
+          }
+        } else {
+          return Promise.all([
+            this._playAudio(res.textResponse.audioStream),
+            this._setState((prevState) => {
+              let history = prevState.history;
 
-            return {
-              history: history,
-              sessionAttributes: res.textResponse.sessionAttributes
-            };
-          })
-        ]);
+              history.unshift({
+                text: res.textResponse.message,
+                source: 'lex'
+              });
+
+              return {
+                history: history,
+                sessionAttributes: res.textResponse.sessionAttributes
+              };
+            })
+          ]);
+        }
       }).catch(err => {
         console.log(err);
       });
