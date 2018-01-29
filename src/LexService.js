@@ -12,7 +12,7 @@ export default class AuthenticationService {
   }
 
   _getTextResponseService(topic, data) {
-    this._getLexResponse(data.request, data.user, 'text/plain; charset=utf-8').then(res => {
+    this._getLexResponse(data.request, data.user, 'text/plain; charset=utf-8', 'text/plain; charset=utf-8').then(res => {
       PubSub.publish(`system.getLexTextResponse.response.${topic.split('.')[3]}`, {
         textResponse: res
       });
@@ -20,14 +20,14 @@ export default class AuthenticationService {
   }
 
   _getAudioResponseService(topic, data) {
-    this._getLexResponse(data.request, data.user, 'audio/mpeg').then(res => {
+    this._getLexResponse(data.request, data.user, 'audio/x-cbr-opus-with-preamble; preamble-size=0; bit-rate=256000; frame-size-milliseconds=4', 'audio/mpeg').then(res => {
       PubSub.publish(`system.getLexAudioResponse.response.${topic.split('.')[3]}`, {
         audioResponse: res
       });
     });
   }
 
-  _getLexResponse(request, user, accept) {
+  _getLexResponse(request, user, contentType, accept) {
     return pps('system.getAwsCredentials').then(cred => {
       let lexruntime = new AWS.LexRuntime({
         region: this._region,
@@ -40,7 +40,7 @@ export default class AuthenticationService {
           botAlias: this._botAlias,
           userId: user,
           inputStream: request,
-          contentType: 'text/plain; charset=utf-8',
+          contentType: contentType,
           accept: accept
         }, (err, data) => {
           if (err) {
