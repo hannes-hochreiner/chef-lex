@@ -108,11 +108,13 @@ export default class ChatView extends Component {
               });
 
               return history;
+            }).then(() => {
+              this._speak(this.state.history[0].text);
             });
           }
         } else {
           return Promise.all([
-            this._playAudio(res.textResponse.audioStream),
+            this._speak(res.textResponse.message),
             this._setState((prevState) => {
               let history = prevState.history;
 
@@ -132,7 +134,10 @@ export default class ChatView extends Component {
         console.log(err);
       });
     });
-    event.preventDefault();
+
+    if (event) {
+      event.preventDefault();
+    }
   }
 
   _setState(state) {
@@ -150,11 +155,28 @@ export default class ChatView extends Component {
   }
 
   _startAudioRecording() {
-    this._mediaRecorder.start();
+    // this._mediaRecorder.start();
+
+    // var msg = new SpeechSynthesisUtterance('this is a test');
+    // window.speechSynthesis.speak(msg);
+    this._sr = new window.webkitSpeechRecognition();
+    this._sr.onresult = (e) => {
+      this._setState({text: e.results[0][0].transcript}).then(() => {
+        this.handleSubmit();
+      });
+    };
+    this._sr.start();
   }
 
   _stopAudioRecording() {
-    this._mediaRecorder.stop();
+    this._sr.stop();
+    delete this._sr;
+    // this._mediaRecorder.stop();
+  }
+
+  _speak(text) {
+    var msg = new SpeechSynthesisUtterance(text);
+    window.speechSynthesis.speak(msg);
   }
 
   _playAudio(stream) {
@@ -186,8 +208,8 @@ export default class ChatView extends Component {
             onKeyPress={this.handleKeyPress.bind(this)}
           />
         </form>
-        <button style={{'display':'none'}} onClick={this._startAudioRecording.bind(this)}>start</button>
-        <button style={{'display':'none'}} onClick={this._stopAudioRecording.bind(this)}>stop</button>
+        <button onClick={this._startAudioRecording.bind(this)}>start</button>
+        <button onClick={this._stopAudioRecording.bind(this)}>stop</button>
         <List style={{'width': '500px'}}>
           {this.state.history.map((e, idx) => {
             if (e.source === 'me') {

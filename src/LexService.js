@@ -12,7 +12,7 @@ export default class AuthenticationService {
   }
 
   _getTextResponseService(topic, data) {
-    this._getLexResponse(data.request, data.user, 'text/plain; charset=utf-8', 'audio/mpeg').then(res => {
+    this._getLexResponse(data.request, data.user, 'text/plain; charset=utf-8', 'text/plain; charset=utf-8').then(res => {
       PubSub.publish(`system.getLexTextResponse.response.${topic.split('.')[3]}`, {
         textResponse: res
       });
