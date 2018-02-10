@@ -3,6 +3,12 @@ import AppBar from 'material-ui/AppBar';
 import TextField from 'material-ui/TextField';
 import {List, ListItem} from 'material-ui/List';
 import CommunicationChatBubble from 'material-ui/svg-icons/communication/chat-bubble';
+import {Toolbar, ToolbarGroup} from 'material-ui/Toolbar';
+import IconButton from 'material-ui/IconButton';
+import IconAvMic from 'material-ui/svg-icons/av/mic';
+import {Tabs, Tab} from 'material-ui/Tabs';
+
+import RecipeList from './RecipeList';
 
 import {promisedPubSub as pps} from './utils';
 
@@ -12,20 +18,17 @@ export default class ChatView extends Component {
     text: '',
     user: 'test' + (new Date()).toISOString(),
     sessionAttributes: {},
-    processing: false
+    processing: false,
+    stage: 'SelectRecipe'
   };
 
-  // constructor() {
-    // super();
-    // console.log(MediaRecorder.isTypeSupported('audio/webm\;codecs=opus'));
-    // let that = this;
-    // navigator.mediaDevices.getUserMedia({audio:true, video:false}).then(function(stream) {
-    //   that._mediaRecorder = new MediaRecorder(stream, {audioBitsPerSecond: 16000, mimeType: 'audio/webm\;codecs=opus'});
-    //   that._audioChunks = [];
-    //   that._mediaRecorder.ondataavailable = that.handleAudioDataAvailable.bind(that);
-    //   that._mediaRecorder.onstop = that.handleAudioRecorderStopped.bind(that);
-    // });
-  // }
+  constructor() {
+    super();
+    this.recipes = {
+      'cereal': {},
+      'meat': {}
+    };
+  }
 
   componentDidMount() {
   }
@@ -38,7 +41,7 @@ export default class ChatView extends Component {
   }
 
   handleAudioRecorderStopped() {
-    var blob = new Blob(this._audioChunks, { 'type' : 'audio/webm\;codecs=opus' });
+    var blob = new Blob(this._audioChunks, { 'type' : 'audio/webm;codecs=opus' });
     this._audioChunks = [];
     // let audio = new Audio();
     // audio.src = URL.createObjectURL(blob);
@@ -203,34 +206,47 @@ export default class ChatView extends Component {
   render() {
     return (
       <div>
-        <AppBar title="ChatView" />
-        <form onSubmit={this.handleSubmit.bind(this)}>
-          <TextField
-            disabled={this.state.processing}
-            hintText='Start chatting'
-            value={this.state.text}
-            onChange={this.handleChange.bind(this)}
-            onKeyPress={this.handleKeyPress.bind(this)}
-          />
-        </form>
+        <AppBar title="Chef Lex" />
+        <Toolbar>
+          <ToolbarGroup firstChild={true}>
+            <TextField
+              disabled={this.state.processing}
+              hintText='Start chatting'
+              value={this.state.text}
+              onChange={this.handleChange.bind(this)}
+              onKeyPress={this.handleKeyPress.bind(this)}
+              fullWidth={true}
+            />
+            <IconButton disabled={this.state.processing}>
+              <IconAvMic/>
+            </IconButton>
+          </ToolbarGroup>
+        </Toolbar>
         <button onClick={this._startAudioRecording.bind(this)}>start</button>
         <button onClick={this._stopAudioRecording.bind(this)}>stop</button>
-        <List style={{'width': '500px'}}>
-          {this.state.history.map((e, idx) => {
-            if (e.source === 'me') {
-              return <ListItem
-                  key={idx}
-                  primaryText={e.text}
-                  leftIcon={<CommunicationChatBubble />}
-                />;
-            }
-            return <ListItem
-                key={idx}
-                primaryText={e.text}
-                rightIcon={<CommunicationChatBubble />}
-              />;
-          })}
-        </List>
+        <Tabs>
+          <Tab label="Chat">
+            <List style={{'width': '500px'}}>
+              {this.state.history.map((e, idx) => {
+                if (e.source === 'me') {
+                  return <ListItem
+                      key={idx}
+                      primaryText={e.text}
+                      leftIcon={<CommunicationChatBubble />}
+                    />;
+                }
+                return <ListItem
+                    key={idx}
+                    primaryText={e.text}
+                    rightIcon={<CommunicationChatBubble />}
+                  />;
+              })}
+            </List>
+          </Tab>
+          <Tab label="Info">
+            <RecipeList recipes={this.recipes}/>
+          </Tab>
+        </Tabs>
       </div>
     );
   }
