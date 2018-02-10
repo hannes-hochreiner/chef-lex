@@ -36,43 +36,6 @@ export default class ChatView extends Component {
   componentWillUnmount() {
   }
 
-  handleAudioDataAvailable(event) {
-    this._audioChunks.push(event.data);
-  }
-
-  handleAudioRecorderStopped() {
-    var blob = new Blob(this._audioChunks, { 'type' : 'audio/webm;codecs=opus' });
-    this._audioChunks = [];
-    // let audio = new Audio();
-    // audio.src = URL.createObjectURL(blob);
-    // audio.addEventListener('ended', function() {
-    //   audio.currentTime = 0;
-    //   audio.src = null;
-    // });
-    // audio.play();
-    pps('system.getLexAudioResponse', {
-      request: blob,
-      user: this.state.user,
-      sessionAttributes: this.state.sessionAttributes
-    }).then(res => {
-      return Promise.all([
-        this._playAudio(res.audioResponse.audioStream),
-        this._setState((prevState) => {
-          let history = prevState.history;
-
-          history.unshift(res.audioResponse.message);
-
-          return {
-            history: history,
-            sessionAttributes: res.audioResponse.sessionAttributes
-          };
-        })
-      ]);
-    }).catch(err => {
-      console.log(err);
-    });
-  }
-
   handleKeyPress(e) {
     if (e.key === 'Enter') {
       this.handleSubmit(e);
@@ -158,44 +121,11 @@ export default class ChatView extends Component {
     });
   }
 
-  _startAudioRecording() {
-    // this._mediaRecorder.start();
-
-    // var msg = new SpeechSynthesisUtterance('this is a test');
-    // window.speechSynthesis.speak(msg);
-    this._sr = new window.webkitSpeechRecognition();
-    this._sr.onresult = (e) => {
-      this._setState({text: e.results[0][0].transcript}).then(() => {
-        this.handleSubmit();
-      });
-    };
-    this._sr.start();
-  }
-
-  _stopAudioRecording() {
-    this._sr.stop();
-    delete this._sr;
-    // this._mediaRecorder.stop();
-  }
-
   _speak(text) {
     this._setState({processing: true}).then(() => {
       return pps('system.speakText', {text: text});
     }).then(() => {
       this._setState({processing: false});
-    });
-  }
-
-  _playAudio(stream) {
-    return new Promise((resolve, reject) => {
-      let audio = new Audio();
-      audio.src = URL.createObjectURL(new Blob([stream], { type: 'audio/mpeg' }));
-      audio.addEventListener('ended', function() {
-        audio.currentTime = 0;
-        audio.src = null;
-        resolve();
-      });
-      audio.play();
     });
   }
 
@@ -222,8 +152,6 @@ export default class ChatView extends Component {
             </IconButton>
           </ToolbarGroup>
         </Toolbar>
-        <button onClick={this._startAudioRecording.bind(this)}>start</button>
-        <button onClick={this._stopAudioRecording.bind(this)}>stop</button>
         <Tabs>
           <Tab label="Chat">
             <List style={{'width': '500px'}}>
