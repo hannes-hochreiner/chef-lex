@@ -7,11 +7,15 @@ import ChatView from './ChatView';
 import injectTapEventPlugin from 'react-tap-event-plugin';
 import { HashRouter as Router, Route, Switch } from 'react-router-dom';
 
+import PubSub from 'pubsub-js';
+
 import AuthenticationService from './AuthenticationService';
 import LexService from './LexService';
+import SpeechSynthesisService from './SpeechSynthesisService';
 
 new AuthenticationService();
 new LexService();
+new SpeechSynthesisService(PubSub);
 
 injectTapEventPlugin();
 

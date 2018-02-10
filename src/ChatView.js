@@ -11,7 +11,8 @@ export default class ChatView extends Component {
     history: [],
     text: '',
     user: 'test' + (new Date()).toISOString(),
-    sessionAttributes: {}
+    sessionAttributes: {},
+    processing: false
   };
 
   // constructor() {
@@ -175,8 +176,11 @@ export default class ChatView extends Component {
   }
 
   _speak(text) {
-    var msg = new SpeechSynthesisUtterance(text);
-    window.speechSynthesis.speak(msg);
+    this._setState({processing: true}).then(() => {
+      return pps('system.speakText', {text: text});
+    }).then(() => {
+      this._setState({processing: false});
+    });
   }
 
   _playAudio(stream) {
@@ -202,6 +206,7 @@ export default class ChatView extends Component {
         <AppBar title="ChatView" />
         <form onSubmit={this.handleSubmit.bind(this)}>
           <TextField
+            disabled={this.state.processing}
             hintText='Start chatting'
             value={this.state.text}
             onChange={this.handleChange.bind(this)}
