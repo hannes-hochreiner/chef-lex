@@ -7,10 +7,12 @@ export default class SpeechSynthesisService {
   _speak(topic, data) {
     var msg = new SpeechSynthesisUtterance(data.text);
 
-    msg.onend = () => {
-      this._ps.publish(`system.speakText.response.${topic.split('.')[3]}`);
-    };
+    // msg.onend = () => {
+    //   console.log('speech end');
+    //   this._ps.publish(`system.speakText.response.${topic.split('.')[3]}`);
+    // };
 
     window.speechSynthesis.speak(msg);
+    this._ps.publish(`system.speakText.response.${topic.split('.')[3]}`);
   }
 }

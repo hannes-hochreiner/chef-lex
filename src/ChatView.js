@@ -9,6 +9,7 @@ import IconAvMic from 'material-ui/svg-icons/av/mic';
 import {Tabs, Tab} from 'material-ui/Tabs';
 
 import RecipeList from './RecipeList';
+import RecipeView from './RecipeView';
 
 import {promisedPubSub as pps} from './utils';
 
@@ -25,8 +26,26 @@ export default class ChatView extends Component {
   constructor() {
     super();
     this.recipes = {
-      'cereal': {},
-      'meat': {}
+      'cereal': {
+        'ingredients': [
+          {'title': 'cereal'},
+          {'title': 'milk'},
+          {'title': 'fruit'}
+        ],
+        'steps': [
+          {'description': 'wash the fruit'},
+          {'description': 'cut the fruit'},
+          {'description': 'mix the cereal with the milk and fruit'}
+        ]
+      },
+      'meat': {
+        'ingredients': [
+          {'title': 'meat'}
+        ],
+        'steps': [
+          {'description': 'fry the meat'}
+        ]
+      }
     };
   }
 
@@ -44,7 +63,11 @@ export default class ChatView extends Component {
   }
 
   handleSubmit(event) {
-    this.setState((prevState) => {
+    if (event) {
+      event.preventDefault();
+    }
+
+    this._setState((prevState) => {
       let text = prevState.text;
       let history = prevState.history;
 
@@ -55,56 +78,122 @@ export default class ChatView extends Component {
 
       return {
         history: history,
-        text: ''
+        text: '',
+        processing: true
       };
-    }, () => {
-      pps('system.getLexTextResponse', {
+    }).then(() => {
+      return pps('system.getLexTextResponse', {
         request: this.state.history[0].text,
         user: this.state.user,
         sessionAttributes: this.state.sessionAttributes
-      }).then(res => {
-        console.log(res);
-        if (res.textResponse.dialogState === 'ReadyForFulfillment') {
-          if (res.textResponse.intentName === 'SelectRecipe') {
+      });
+    }).then(res => {
+      console.log(res);
+      if (res.textResponse.dialogState === 'ReadyForFulfillment') {
+        if (res.textResponse.intentName === 'SelectRecipe') {
+          if (typeof this.recipes[res.textResponse.slots['Recipe']] === 'undefined') {
             return this._setState((prevState) => {
               let history = prevState.history;
 
               history.unshift({
-                text: `Great! Let's cook ${res.textResponse.slots['Recipe']} for ${res.textResponse.slots['NumberOfPortions']} people.`,
+                text: `Sorry, I don't know how to cook ${res.textResponse.slots['Recipe']} yet.`,
                 source: 'lex'
               });
 
-              return history;
+              return {history: history};
             }).then(() => {
-              this._speak(this.state.history[0].text);
+              return this._speak(this.state.history[0].text);
             });
           }
-        } else {
-          return Promise.all([
-            this._speak(res.textResponse.message),
-            this._setState((prevState) => {
-              let history = prevState.history;
 
-              history.unshift({
-                text: res.textResponse.message,
-                source: 'lex'
-              });
+          let responseText = `Great! Let's cook ${res.textResponse.slots['Recipe']} for ${res.textResponse.slots['NumberOfPortions']} people.`;
+          let selectedRecipe = this.recipes[res.textResponse.slots['Recipe']];
 
-              return {
-                history: history,
-                sessionAttributes: res.textResponse.sessionAttributes
-              };
-            })
-          ]);
+          return this._setState((prevState) => {
+            let history = prevState.history;
+
+            history.unshift({
+              text: responseText,
+              source: 'lex'
+            });
+
+            return {
+              history: history,
+              selectedRecipe: selectedRecipe,
+              currentStep: -1
+            };
+          }).then(() => {
+            return this._speak(this.state.history[0].text);
+          }).then(() => {
+            return this._describeNextStep();
+          });
+        } else if (res.textResponse.intentName === 'GoToNextStep') {
+          if (this.state.currentStep + 1 < this.state.selectedRecipe.steps.length) {
+            return this._describeNextStep();
+          }
+
+          return this._setState((prevState) => {
+            let history = prevState.history;
+
+            history.unshift({
+              text: `You are all done. Enjoy your meal!`,
+              source: 'lex'
+            });
+
+            return {
+              history: history,
+              sessionAttributes: res.textResponse.sessionAttributes,
+              selectedRecipe: null,
+              currentStep: null
+            };
+          }).then(() => {
+            return this._speak(this.state.history[0].text);
+          });
         }
-      }).catch(err => {
-        console.log(err);
-      });
-    });
+      } else {
+        return this._setState((prevState) => {
+          let history = prevState.history;
 
-    if (event) {
-      event.preventDefault();
-    }
+          history.unshift({
+            text: res.textResponse.message,
+            source: 'lex'
+          });
+
+          return {
+            history: history,
+            sessionAttributes: res.textResponse.sessionAttributes
+          };
+        }).then(() => {
+          return this._speak(this.state.history[0].text);
+        });
+      }
+    }).then(() => {
+      return this._setState({
+        processing: false
+      });
+    }).catch(err => {
+      console.log(err);
+    });
+  }
+
+  _describeNextStep() {
+    return this._setState((prevState) => {
+      let nextStep = prevState.currentStep + 1;
+      let responseText = `Step ${nextStep + 1} is to ${this.state.selectedRecipe.steps[nextStep].description}`;
+      let history = prevState.history;
+
+      history.unshift({
+        text: responseText,
+        source: 'lex'
+      });
+
+      return {
+        history: history,
+        currentStep: nextStep
+      };
+    }).then(() => {
+      return this._speak(this.state.history[0].text);
+    });
   }
 
   _setState(state) {
@@ -122,11 +211,7 @@ export default class ChatView extends Component {
   }
 
   _speak(text) {
-    this._setState({processing: true}).then(() => {
-      return pps('system.speakText', {text: text});
-    }).then(() => {
-      this._setState({processing: false});
-    });
+    return pps('system.speakText', {text: text});
   }
 
   handleChange(event) {
@@ -134,6 +219,12 @@ export default class ChatView extends Component {
   }
 
   render() {
+    let info = <RecipeList recipes={this.recipes}/>;
+
+    if (this.state.selectedRecipe) {
+      info = <RecipeView recipe={this.state.selectedRecipe}/>;
+    }
+
     return (
       <div>
         <AppBar title="Chef Lex" />
@@ -172,7 +263,7 @@ export default class ChatView extends Component {
             </List>
           </Tab>
           <Tab label="Info">
-            <RecipeList recipes={this.recipes}/>
+            {info}
           </Tab>
         </Tabs>
       </div>
