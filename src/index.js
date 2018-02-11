@@ -12,10 +12,12 @@ import PubSub from 'pubsub-js';
 import AuthenticationService from './AuthenticationService';
 import LexService from './LexService';
 import SpeechSynthesisService from './SpeechSynthesisService';
+import SpeechRecognitionService from './SpeechRecognitionService';
 
 new AuthenticationService();
 new LexService();
 new SpeechSynthesisService(PubSub);
+new SpeechRecognitionService(PubSub);
 
 injectTapEventPlugin();
 

@@ -214,6 +214,14 @@ export default class ChatView extends Component {
     return pps('system.speakText', {text: text});
   }
 
+  _recognizeSpeech() {
+    pps('system.recognizeSpeech').then(res => {
+      return this._setState({text: res.text});
+    }).then(() => {
+      this.handleSubmit();
+    });
+  }
+
   handleChange(event) {
     this.setState({text: event.target.value});
   }
@@ -239,7 +247,7 @@ export default class ChatView extends Component {
               fullWidth={true}
             />
             <IconButton disabled={this.state.processing}>
-              <IconAvMic/>
+              <IconAvMic onClick={this._recognizeSpeech.bind(this)}/>
             </IconButton>
           </ToolbarGroup>
         </Toolbar>
