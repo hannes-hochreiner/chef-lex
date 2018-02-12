@@ -127,6 +127,14 @@ export default class ChatView extends Component {
           }).then(() => {
             return this._describeNextStep();
           });
+        } else if (res.textResponse.intentName === 'AddStep') {
+          if (res.textResponse.slots['stepPosition'] - 1 > 0) {
+            let idx = Math.min(res.textResponse.slots['stepPosition'] - 1, this.state.selectedRecipe.steps.length);
+
+            return this._setState((prevState) => {
+              this.state.selectedRecipe.steps.splice(idx, 0, {'description': res.textResponse.slots['stepAction']});
+            });
+          }
         } else if (res.textResponse.intentName === 'GoToNextStep') {
           if (this.state.currentStep + 1 < this.state.selectedRecipe.steps.length) {
             return this._setState(prevState => {
