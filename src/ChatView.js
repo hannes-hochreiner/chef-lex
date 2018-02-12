@@ -107,7 +107,7 @@ export default class ChatView extends Component {
           }
 
           let responseText = `Great! Let's cook ${res.textResponse.slots['Recipe']} for ${res.textResponse.slots['NumberOfPortions']} people.`;
-          let selectedRecipe = this.recipes[res.textResponse.slots['Recipe']];
+          let selectedRecipe = JSON.parse(JSON.stringify(this.recipes[res.textResponse.slots['Recipe']]));
 
           return this._setState((prevState) => {
             let history = prevState.history;
@@ -129,7 +129,13 @@ export default class ChatView extends Component {
           });
         } else if (res.textResponse.intentName === 'GoToNextStep') {
           if (this.state.currentStep + 1 < this.state.selectedRecipe.steps.length) {
-            return this._describeNextStep();
+            return this._setState(prevState => {
+              prevState.selectedRecipe.steps[this.state.currentStep].done = true;
+
+              return prevState;
+            }).then(() => {
+              return this._describeNextStep();
+            });
           }
 
           return this._setState((prevState) => {
@@ -230,7 +236,7 @@ export default class ChatView extends Component {
     let info = <RecipeList recipes={this.recipes}/>;
 
     if (this.state.selectedRecipe) {
-      info = <RecipeView recipe={this.state.selectedRecipe}/>;
+      info = <RecipeView recipe={this.state.selectedRecipe} currentStep={this.state.currentStep}/>;
     }
 
     return (
