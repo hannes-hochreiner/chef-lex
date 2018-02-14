@@ -26,24 +26,44 @@ export default class ChatView extends Component {
   constructor() {
     super();
     this.recipes = {
-      'cereal': {
+      'salad': {
         'ingredients': [
-          {'title': 'cereal'},
-          {'title': 'milk'},
-          {'title': 'fruit'}
+          {'title': 'lettuce'},
+          {'title': 'tomatos'},
+          {'title': 'mushrooms'}
         ],
         'steps': [
-          {'description': 'wash the fruit'},
-          {'description': 'cut the fruit'},
-          {'description': 'mix the cereal with the milk and fruit'}
+          {'description': 'wash the lettuce, the tomatos, and the mushrooms'},
+          {'description': 'chop the tomatos and the mushrooms'},
+          {'description': 'add dressing'}
         ]
       },
-      'meat': {
+      'soup': {
         'ingredients': [
-          {'title': 'meat'}
+          {'title': 'onions'},
+          {'title': 'beef broth'},
+          {'title': 'white wine'}
         ],
         'steps': [
-          {'description': 'fry the meat'}
+          {'description': 'peel and chop the onions'},
+          {'description': 'sauté the onions'},
+          {'description': 'add the salt'},
+          {'description': 'stir in the wine'},
+          {'description': 'add the broth'}
+        ]
+      },
+      'fish': {
+        'ingredients': [
+          {'title': 'fish'},
+          {'title': 'flour'},
+          {'title': 'spices'}
+        ],
+        'steps': [
+          {'description': 'wash the fish'},
+          {'description': 'fillet the fish'},
+          {'description': 'mix the flour and the spices'},
+          {'description': 'dip the fish into the mixture'},
+          {'description': 'fry the fish for 5 minutes'}
         ]
       }
     };
